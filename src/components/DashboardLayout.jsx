@@ -14,6 +14,9 @@ import {
   Crown,
   Hand,
   UserCheck2,
+  Shield,
+  Users,
+  ActivitySquare,
 } from 'lucide-react';
 
 export const DashboardLayout = () => {
@@ -27,6 +30,7 @@ export const DashboardLayout = () => {
       case 'programmer':      return 'Programmer';
       case 'owner':           return 'Company Owner';
       case 'client':          return 'Client / Reporter';
+      case 'admin':           return 'System Administrator';
       default:                return role;
     }
   };
@@ -69,6 +73,12 @@ export const DashboardLayout = () => {
           { name: 'Dashboard Overview', path: '/',              icon: LayoutDashboard, end: true },
           { name: 'Buat Tiket',         path: '/client/create', icon: FilePlus },
           { name: 'Riwayat Tiket',      path: '/tickets',       icon: ClipboardList,   end: true },
+        ];
+      case 'admin':
+        return [
+          { name: 'Admin Dashboard',   path: '/admin',              icon: Shield,          end: true },
+          { name: 'Manajemen Pengguna', path: '/admin/users',        icon: Users },
+          { name: 'Log Aktivitas',      path: '/admin/activity-logs', icon: ActivitySquare },
         ];
       default:
         return defaultMenu;

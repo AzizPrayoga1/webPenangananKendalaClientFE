@@ -16,6 +16,13 @@ import { Reports } from './components/Reports';
 import { OwnerIssues } from './components/OwnerIssues';
 import { Profile } from './components/Profile';
 import { TicketDetail } from './components/TicketDetail';
+import { ForgotPassword } from './components/ForgotPassword';
+import { ResetPassword } from './components/ResetPassword';
+
+// Admin Imports
+import { AdminDashboard } from './components/Admin/AdminDashboard';
+import { UserManagement } from './components/Admin/UserManagement';
+import { AdminActivityLog } from './components/Admin/AdminActivityLog';
 
 // Client Imports
 import { ClientDashboard } from './components/Client/ClientDashboard';
@@ -67,6 +74,9 @@ const DashboardIndex = () => {
   const { user } = useAuth();
   if (user?.role === 'client') {
     return <ClientDashboard />;
+  }
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
   }
   return <DashboardOverview />;
 };
@@ -199,7 +209,44 @@ function App() {
 
             {/* Ticket details routing lookup by ticket_id string */}
             <Route path="tickets/:ticketId" element={<TicketDetail />} />
+
+            {/* Admin RBAC Routes */}
+            <Route
+              path="admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/users"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/activity-logs"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminActivityLog />
+                </ProtectedRoute>
+              }
+            />
           </Route>
+
+          {/* Public: Forgot Password & Reset Password (no auth needed) */}
+          <Route
+            path="/forgot-password"
+            element={
+              <PublicRoute>
+                <ForgotPassword />
+              </PublicRoute>
+            }
+          />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Fallback Catch All */}
           <Route path="*" element={<Navigate to="/" replace />} />

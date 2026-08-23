@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../AuthContext';
+import { Link } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
 
 export const LoginScreen = () => {
   const { login } = useAuth();
@@ -46,8 +48,13 @@ export const LoginScreen = () => {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-3.5 rounded-sm mb-6">
-            {error}
+          <div className={`border text-xs p-3.5 rounded-sm mb-6 flex items-start gap-2 ${
+            error.toLowerCase().includes('dinonaktifkan')
+              ? 'bg-amber-50 border-amber-300 text-amber-800'
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
+            {error.toLowerCase().includes('dinonaktifkan') && <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
+            <span>{error}</span>
           </div>
         )}
 
@@ -87,6 +94,16 @@ export const LoginScreen = () => {
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>
+
+          {/* Forgot Password - only relevant for Client accounts */}
+          <div className="text-center">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-slate-400 hover:text-primary transition-colors"
+            >
+              Lupa password akun Client?
+            </Link>
+          </div>
         </form>
 
         <div className="relative my-8 text-center">
@@ -133,6 +150,13 @@ export const LoginScreen = () => {
             disabled={loading}
           >
             Client
+          </button>
+          <button
+            onClick={() => handleQuickLogin('admin@example.com')}
+            className="border border-primary/30 text-primary font-semibold text-xs py-2 px-3 rounded-sm hover:bg-primary/5 hover:border-primary/50 transition-all cursor-pointer text-center col-span-2 sm:col-span-3"
+            disabled={loading}
+          >
+            Admin (RBAC)
           </button>
         </div>
       </div>
