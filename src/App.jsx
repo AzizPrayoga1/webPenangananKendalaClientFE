@@ -18,6 +18,7 @@ import { Profile } from './components/Profile';
 import { TicketDetail } from './components/TicketDetail';
 import { ForgotPassword } from './components/ForgotPassword';
 import { ResetPassword } from './components/ResetPassword';
+import { PWAStatusBanner } from './components/PWAStatusBanner';
 
 // Admin Imports
 import { AdminDashboard } from './components/Admin/AdminDashboard';
@@ -251,6 +252,7 @@ function App() {
           {/* Fallback Catch All */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <PWAStatusBanner />
         </NotificationProvider>
       </BrowserRouter>
     </AuthProvider>
