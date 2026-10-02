@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, CheckCircle, ArrowLeft, WifiOff } from 'lucide-react';
+import { queueOfflineAction } from '../../utils/offlineSync';
 
 export const CreateTicketForm = () => {
   const navigate = useNavigate();
@@ -23,6 +24,17 @@ export const CreateTicketForm = () => {
     setError('');
     setSuccess('');
 
+    // Check Offline status first
+    if (!navigator.onLine) {
+      queueOfflineAction('CREATE_TICKET', { title, description });
+      setSuccess('Mode Offline: Tiket berhasil disimpan di antrean perangkat! Akkan ter-sync otomatis begitu internet kembali terhubung.');
+      setSubmitting(false);
+      setTimeout(() => {
+        navigate('/client');
+      }, 2500);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
@@ -42,7 +54,13 @@ export const CreateTicketForm = () => {
         navigate(`/client/tickets/${createdTicket.ticket_id}`);
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal mengirimkan tiket bantuan.');
+      if (!err.response) {
+        // Network error / server offline
+        queueOfflineAction('CREATE_TICKET', { title, description });
+        setSuccess('Koneksi terputus: Tiket disimpan di antrean offline lokal dan akan ter-sync saat terhubung kembali.');
+      } else {
+        setError(err.response?.data?.message || 'Gagal mengirimkan tiket bantuan.');
+      }
     } finally {
       setSubmitting(false);
     }

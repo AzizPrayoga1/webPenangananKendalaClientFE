@@ -1,14 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Wifi, WifiOff, CheckCircle2, Smartphone, ShieldCheck } from 'lucide-react';
+import { Download, Wifi, WifiOff, CheckCircle2, Smartphone, ShieldCheck, RefreshCw } from 'lucide-react';
+import axios from 'axios';
+import { getOfflineQueue, syncOfflineQueue } from '../utils/offlineSync';
 
 export const PWAStatusBanner = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
+  const [syncNotice, setSyncNotice] = useState('');
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
+    const handleOnline = async () => {
+      setIsOnline(true);
+      
+      // Auto sync offline items
+      const queue = getOfflineQueue();
+      if (queue.length > 0) {
+        setSyncNotice(`Menyinkronkan ${queue.length} tiket offline ke server...`);
+        const result = await syncOfflineQueue({
+          CREATE_TICKET: async (payload) => {
+            await axios.post('/client/tickets', payload);
+          }
+        });
+        if (result.count > 0) {
+          setSyncNotice(`✅ Sukses: ${result.count} tiket offline ter-sync ke server!`);
+          setTimeout(() => setSyncNotice(''), 4000);
+        }
+      }
+    };
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
@@ -48,6 +68,14 @@ export const PWAStatusBanner = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+      {/* Offline Sync Toast Notification */}
+      {syncNotice && (
+        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 backdrop-blur-md shadow-2xl animate-pulse">
+          <RefreshCw className="w-5 h-5 text-emerald-400 shrink-0 animate-spin" />
+          <p className="text-xs font-medium">{syncNotice}</p>
+        </div>
+      )}
+
       {/* Offline Alert Banner */}
       {!isOnline && (
         <div className="flex items-center gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 backdrop-blur-md shadow-2xl animate-bounce">
