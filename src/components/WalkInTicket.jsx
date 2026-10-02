@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { queueOfflineAction } from '../utils/offlineSync';
 import {
   UserPlus,
   Phone,
@@ -170,6 +171,26 @@ export const WalkInTicket = () => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
+
+    if (!navigator.onLine) {
+      const offlinePayload = {
+        reporter_name: reporterName.trim(),
+        contact_method: contactMethod,
+        title: title.trim(),
+        description: description.trim(),
+        reporter_contact: reporterContact.trim() || undefined,
+        contact_method_notes: contactMethodNotes.trim() || undefined,
+        category: category || undefined,
+      };
+      queueOfflineAction('WALK_IN_TICKET', offlinePayload);
+      setCreatedTicket({
+        ticket_id: `OFFLINE-WALKIN-${Date.now().toString().slice(-4)}`,
+        title: title.trim(),
+        status: 'open (Offline Queued)',
+      });
+      setSubmitting(false);
+      return;
+    }
 
     const formData = new FormData();
     formData.append('reporter_name',   reporterName.trim());

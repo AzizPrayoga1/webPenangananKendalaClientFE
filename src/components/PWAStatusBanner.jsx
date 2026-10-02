@@ -21,6 +21,15 @@ export const PWAStatusBanner = () => {
         const result = await syncOfflineQueue({
           CREATE_TICKET: async (payload) => {
             await axios.post('/client/tickets', payload);
+          },
+          WALK_IN_TICKET: async (payload) => {
+            await axios.post('/tickets/walk-in', payload);
+          },
+          UPDATE_TICKET_STATUS: async (payload) => {
+            await axios.post(`/tickets/${payload.ticketId}/status`, payload.data);
+          },
+          ASSIGN_TICKET: async (payload) => {
+            await axios.post(`/tickets/${payload.ticketId}/assign`, payload.data);
           }
         });
         if (result.count > 0) {
