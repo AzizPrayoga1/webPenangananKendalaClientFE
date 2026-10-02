@@ -63,13 +63,43 @@ const NotificationItem = ({ notif, onNavigate }) => {
   );
 };
 
+import { subscribeUserToPush, sendTestPushNotification } from '../utils/pushManager';
+
 /* ─── Main Bell Component ─── */
 export const NotificationBell = () => {
   const { notifications, unreadCount, markAllRead, markOneRead, relativeTime } =
     useNotifications();
   const [open, setOpen] = useState(false);
+  const [pushStatus, setPushStatus] = useState('');
+  const [pushLoading, setPushLoading] = useState(false);
   const panelRef = useRef(null);
   const navigate = useNavigate();
+
+  const handleSubscribePush = async () => {
+    setPushLoading(true);
+    setPushStatus('');
+    try {
+      await subscribeUserToPush();
+      setPushStatus('✅ Web Push Notification berhasil diaktifkan!');
+    } catch (err) {
+      setPushStatus(`❌ ${err.message || 'Gagal mengaktifkan push notification'}`);
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setPushLoading(true);
+    setPushStatus('');
+    try {
+      const res = await sendTestPushNotification();
+      setPushStatus(`🚀 ${res.message}`);
+    } catch (err) {
+      setPushStatus(`❌ ${err.response?.data?.message || 'Gagal mengirim push notification'}`);
+    } finally {
+      setPushLoading(false);
+    }
+  };
 
   // Close on outside click
   useEffect(() => {
@@ -176,9 +206,36 @@ export const NotificationBell = () => {
             )}
           </div>
 
-          {/* Footer — single plain row, no background card */}
-          <div className="px-4 py-2 border-t border-slate-100 flex items-center justify-between shrink-0">
-            <p className="text-[10px] text-slate-400">Diperbarui tiap 15 detik</p>
+          {/* Web Push Notification Control Bar (Phase 3) */}
+          <div className="px-3 py-2.5 bg-slate-50 border-t border-slate-100 flex flex-col gap-2 shrink-0">
+            {pushStatus && (
+              <div className="text-[10px] font-semibold text-slate-700 bg-white p-1.5 rounded border border-slate-200">
+                {pushStatus}
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-1.5">
+              <button
+                type="button"
+                onClick={handleSubscribePush}
+                disabled={pushLoading}
+                className="flex-1 py-1 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[10px] font-bold transition-all disabled:opacity-50 cursor-pointer text-center"
+              >
+                {pushLoading ? 'Loading...' : '🔔 Aktifkan Push'}
+              </button>
+              <button
+                type="button"
+                onClick={handleSendTestPush}
+                disabled={pushLoading}
+                className="flex-1 py-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition-all disabled:opacity-50 cursor-pointer text-center"
+              >
+                🚀 Tes Web Push
+              </button>
+            </div>
+          </div>
+
+          {/* Footer — single plain row */}
+          <div className="px-4 py-1.5 border-t border-slate-100 flex items-center justify-between shrink-0 bg-white">
+            <p className="text-[10px] text-slate-400">PWA Phase 3: Real-Time Web Push</p>
             {enriched.length > 0 && (
               <p className="text-[10px] text-slate-400">{enriched.length} notifikasi</p>
             )}
