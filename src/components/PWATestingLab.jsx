@@ -28,6 +28,10 @@ import {
   subscribeUserToPush,
   sendTestPushNotification
 } from '../utils/pushManager';
+import {
+  setAppBadge,
+  clearAppBadge
+} from '../utils/appBadge';
 
 export const PWATestingLab = ({ isOpen, onClose }) => {
   const [logs, setLogs] = useState([]);
@@ -210,23 +214,26 @@ export const PWATestingLab = ({ isOpen, onClose }) => {
     }
   };
 
-  // 8. Simulator: Set App Badge API
+  // 8. Simulator: Set App Badge API (Native + Firefox Favicon Badge)
   const handleSetBadge = async (count) => {
     setBadgeCount(count);
-    if ('setAppBadge' in navigator) {
-      try {
-        if (count === 0) {
-          await navigator.clearAppBadge();
-          addLog('🏷️ App Badge di-clear dari ikon aplikasi.', 'info');
+    try {
+      if (count === 0) {
+        await clearAppBadge();
+        addLog('🏷️ App Badge di-clear. Ikon Favicon & Judul Tab dipulihkan normal.', 'info');
+      } else {
+        const res = await setAppBadge(count);
+        if (res.isNative) {
+          addLog(`🏷️ Native OS App Badge di-set ke: ${count} di taskbar/launcher.`, 'success');
         } else {
-          await navigator.setAppBadge(count);
-          addLog(`🏷️ App Badge di-set ke: ${count} di taskbar/launcher.`, 'success');
+          addLog(
+            `🦊 Firefox Mode: Favicon Badge merah (${count}) & Judul Tab "(${count}) ..." aktif! Coba lihat tab browser Firefox Anda sekarang!`,
+            'success'
+          );
         }
-      } catch (err) {
-        addLog(`Badge error: ${err.message}`, 'error');
       }
-    } else {
-      addLog(`⚠️ Browser belum mendukung navigator.setAppBadge (Badge virtual: ${count})`, 'warn');
+    } catch (err) {
+      addLog(`Badge error: ${err.message}`, 'error');
     }
   };
 

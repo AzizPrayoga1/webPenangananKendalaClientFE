@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import { setAppBadge, clearAppBadge } from './utils/appBadge';
 
 const NotificationContext = createContext(null);
 
@@ -410,14 +411,12 @@ export const NotificationProvider = ({ children }) => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // Phase 4: App Badge API Integration
+  // Phase 4: App Badge API & Firefox Favicon Badge Integration
   useEffect(() => {
-    if ('setAppBadge' in navigator) {
-      if (unreadCount > 0) {
-        navigator.setAppBadge(unreadCount).catch(() => {});
-      } else {
-        navigator.clearAppBadge().catch(() => {});
-      }
+    if (unreadCount > 0) {
+      setAppBadge(unreadCount);
+    } else {
+      clearAppBadge();
     }
   }, [unreadCount]);
 
