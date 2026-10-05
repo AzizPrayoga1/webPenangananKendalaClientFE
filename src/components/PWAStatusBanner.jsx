@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Wifi, WifiOff, CheckCircle2, Smartphone, ShieldCheck, RefreshCw, FlaskConical } from 'lucide-react';
+import { Download, Wifi, WifiOff, CheckCircle2, Smartphone, ShieldCheck, RefreshCw, FlaskConical, Share, Plus, HelpCircle } from 'lucide-react';
 import axios from 'axios';
 import { getOfflineQueue, syncOfflineQueue } from '../utils/offlineSync';
 import { PWATestingLab } from './PWATestingLab';
@@ -10,6 +10,8 @@ export const PWAStatusBanner = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [showTestingLab, setShowTestingLab] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [showIosPrompt, setShowIosPrompt] = useState(false);
   const [syncNotice, setSyncNotice] = useState('');
 
   useEffect(() => {
@@ -58,12 +60,30 @@ export const PWAStatusBanner = () => {
       setIsInstalled(true);
     }
 
+    // Phase 4: Detect iOS Safari
+    const isIosDevice = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isIosDevice && !isInStandalone) {
+      setIsIos(true);
+    }
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+
+  // Phase 4: Dynamic Theme Color Adaptation (changes meta theme-color based on online/offline state)
+  useEffect(() => {
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.name = 'theme-color';
+      document.head.appendChild(metaThemeColor);
+    }
+    metaThemeColor.setAttribute('content', isOnline ? '#0f172a' : '#b45309');
+  }, [isOnline]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -132,6 +152,17 @@ export const PWAStatusBanner = () => {
             <span>Test Lab</span>
           </button>
 
+          {isIos && !isInstalled && (
+            <button
+              onClick={() => setShowIosPrompt(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md shadow-sky-600/30 shrink-0 cursor-pointer"
+              title="Panduan Install di iOS Safari"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>iOS Install</span>
+            </button>
+          )}
+
           {deferredPrompt && !isInstalled && (
             <button
               onClick={handleInstallClick}
@@ -151,6 +182,81 @@ export const PWAStatusBanner = () => {
           </button>
         </div>
       </div>
+
+      {/* iOS Safari Add to Home Screen Guidance Modal */}
+      {showIosPrompt && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 animate-fade-in text-left">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl flex flex-col gap-4 text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-sky-500/20 text-sky-400 rounded-lg">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Pasang di iPhone / iPad</h3>
+                  <p className="text-[11px] text-slate-400">Panduan iOS Safari</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowIosPrompt(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3 text-xs">
+              <div className="flex items-start gap-3 bg-slate-800/80 p-3 rounded-xl border border-slate-700/50">
+                <span className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                  1
+                </span>
+                <div>
+                  <p className="font-semibold text-slate-200 flex items-center gap-1.5">
+                    Ketuk tombol Share <Share className="w-3.5 h-3.5 text-sky-400 inline" />
+                  </p>
+                  <p className="text-slate-400 text-[11px] mt-0.5">
+                    Di bilah menu bawah browser Safari (ikon kotak dengan panah ke atas).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 bg-slate-800/80 p-3 rounded-xl border border-slate-700/50">
+                <span className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                  2
+                </span>
+                <div>
+                  <p className="font-semibold text-slate-200 flex items-center gap-1.5">
+                    Pilih "Add to Home Screen" <Plus className="w-3.5 h-3.5 text-emerald-400 inline" />
+                  </p>
+                  <p className="text-slate-400 text-[11px] mt-0.5">
+                    Gulir daftar opsi ke bawah hingga menemukan <em>"Tambahkan ke Layar Utama"</em>.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 bg-slate-800/80 p-3 rounded-xl border border-slate-700/50">
+                <span className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                  3
+                </span>
+                <div>
+                  <p className="font-semibold text-slate-200">Ketuk "Tambah" (Add)</p>
+                  <p className="text-slate-400 text-[11px] mt-0.5">
+                    Aplikasi akan terpasang di Home Screen iPhone Anda seperti aplikasi App Store!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowIosPrompt(false)}
+              className="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-sky-600/30 cursor-pointer mt-1 text-center"
+            >
+              Saya Mengerti
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Interactive PWA Testing Lab Modal */}
       <PWATestingLab

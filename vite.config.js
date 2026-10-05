@@ -32,6 +32,29 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'any maskable'
           }
+        ],
+        shortcuts: [
+          {
+            name: 'Buat Tiket Kendala',
+            short_name: 'Buat Tiket',
+            description: 'Laporkan kendala baru langsung dari home screen',
+            url: '/client/create',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Daftar Tiket',
+            short_name: 'Tiket',
+            description: 'Lihat status tiket bantuan Anda',
+            url: '/tickets',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Tiket Walk-in',
+            short_name: 'Walk-in',
+            description: 'Buat tiket walk-in untuk client',
+            url: '/tickets/walk-in',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          }
         ]
       },
       workbox: {

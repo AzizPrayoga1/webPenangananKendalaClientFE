@@ -410,6 +410,17 @@ export const NotificationProvider = ({ children }) => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  // Phase 4: App Badge API Integration
+  useEffect(() => {
+    if ('setAppBadge' in navigator) {
+      if (unreadCount > 0) {
+        navigator.setAppBadge(unreadCount).catch(() => {});
+      } else {
+        navigator.clearAppBadge().catch(() => {});
+      }
+    }
+  }, [unreadCount]);
+
   return (
     <NotificationContext.Provider
       value={{ notifications, unreadCount, markAllRead, markOneRead, relativeTime }}
