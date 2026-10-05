@@ -22,14 +22,19 @@ import {
   HardDrive,
   Cpu,
   Activity,
-  Check
+  Check,
+  Radio,
+  Clock
 } from 'lucide-react';
 import axios from 'axios';
 import {
   getOfflineQueue,
   queueOfflineAction,
   clearOfflineQueue,
-  syncOfflineQueue
+  syncOfflineQueue,
+  checkBackgroundSyncSupport,
+  registerBackgroundSync,
+  simulateBackgroundSyncExecution
 } from '../utils/offlineSync';
 import {
   subscribeUserToPush,
@@ -57,6 +62,8 @@ export const PWATestingLab = ({ isOpen, onClose }) => {
   const [storageInfo, setStorageInfo] = useState({ usage: null, quota: null, percent: 0 });
   const [isSecure, setIsSecure] = useState(typeof window !== 'undefined' ? window.isSecureContext : false);
   const [swActive, setSwActive] = useState(false);
+  const [bgSyncInfo, setBgSyncInfo] = useState(checkBackgroundSyncSupport());
+  const [bgSyncLoading, setBgSyncLoading] = useState(false);
 
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString('id-ID');
@@ -215,6 +222,56 @@ export const PWATestingLab = ({ isOpen, onClose }) => {
       addLog(`❌ Gagal sinkronisasi: ${err.message}`, 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 3b. Simulator: Background Sync Simulation (Service Worker Thread)
+  const handleTriggerBackgroundSyncSimulation = async () => {
+    setBgSyncLoading(true);
+    addLog('📡 Memulai simulasi Background Sync di Service Worker thread...', 'info');
+
+    // Jika antrean kosong, otomatis buat 1 dummy tiket dulu agar ada data riil yang disinkronkan
+    let currentQueue = getOfflineQueue();
+    if (currentQueue.length === 0) {
+      const fakeId = Math.floor(1000 + Math.random() * 9000);
+      const fakeTicket = {
+        title: `[Background Sync #${fakeId}] Tiket Terkirim Saat Tab Tertutup`,
+        description: `Tiket ini disimpan saat offline dan dieksekusi otomatis oleh Service Worker Background Sync Engine pada ${new Date().toLocaleTimeString()}.`,
+        priority: 'high',
+        category: 'Sistem'
+      };
+      queueOfflineAction('CREATE_TICKET', fakeTicket);
+      refreshQueue();
+      addLog(`📝 Tiket #${fakeId} ditambahkan ke antrean offline untuk uji Background Sync.`, 'info');
+      currentQueue = getOfflineQueue();
+    }
+
+    try {
+      // 1. Eksekusi simulasi di thread Service Worker
+      const bgResult = await simulateBackgroundSyncExecution(currentQueue.length);
+      addLog(`⚙️ [${bgResult.source}] ${bgResult.data?.message || 'Event sync diproses.'}`, 'info');
+
+      // 2. Lakukan sinkronisasi data aktual ke backend Laravel
+      const result = await syncOfflineQueue({
+        CREATE_TICKET: async (payload) => {
+          const res = await axios.post('/client/tickets', payload);
+          addLog(`✅ Server Laravel menerima tiket: "${payload.title}" (ID: ${res.data?.id || 'OK'})`, 'success');
+        },
+        WALK_IN_TICKET: async (payload) => {
+          const res = await axios.post('/tickets/walk-in', payload);
+          addLog(`✅ Server Laravel menerima tiket walk-in: "${payload.title}"`, 'success');
+        }
+      });
+
+      refreshQueue();
+      addLog(
+        `🎉 Background Sync Sukses! ${result.count} tiket berhasil dikirim ke Backend Laravel oleh Background Sync Engine.`,
+        'success'
+      );
+    } catch (err) {
+      addLog(`❌ Background Sync error: ${err.message}`, 'error');
+    } finally {
+      setBgSyncLoading(false);
     }
   };
 
@@ -461,6 +518,37 @@ export const PWATestingLab = ({ isOpen, onClose }) => {
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
+              </div>
+
+              {/* Sub-card: Service Worker Background Sync Engine */}
+              <div className="bg-slate-900/90 border border-indigo-500/30 rounded-lg p-3 flex flex-col gap-2 mt-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
+                    <Radio className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Background Sync Engine (PWA Advanced)</span>
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    {bgSyncInfo.hasSyncManager ? 'SyncManager (Native)' : 'Firefox Lifecycle'}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  {bgSyncInfo.hasSyncManager
+                    ? 'Browser mendukung SyncManager. Service Worker menyinkronkan data di latar belakang meskipun tab ditutup!'
+                    : 'Di Firefox, Background Sync di-handle otomatis via Service Worker message & Online Lifecycle Engine saat koneksi pulih.'}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleTriggerBackgroundSyncSimulation}
+                  disabled={bgSyncLoading}
+                  className="py-2 px-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md shadow-indigo-950 disabled:opacity-50"
+                >
+                  <Radio className={`w-3.5 h-3.5 ${bgSyncLoading ? 'animate-spin' : ''}`} />
+                  {bgSyncLoading
+                    ? 'Menjalankan Sync di SW Thread...'
+                    : '📡 Simulasi Background Sync (SW Thread)'}
+                </button>
               </div>
             </div>
           </div>
