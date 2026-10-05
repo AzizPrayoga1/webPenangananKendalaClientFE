@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Wifi, WifiOff, CheckCircle2, Smartphone, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Download, Wifi, WifiOff, CheckCircle2, Smartphone, ShieldCheck, RefreshCw, FlaskConical } from 'lucide-react';
 import axios from 'axios';
 import { getOfflineQueue, syncOfflineQueue } from '../utils/offlineSync';
+import { PWATestingLab } from './PWATestingLab';
 
 export const PWAStatusBanner = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
+  const [showTestingLab, setShowTestingLab] = useState(false);
   const [syncNotice, setSyncNotice] = useState('');
 
   useEffect(() => {
@@ -119,25 +121,42 @@ export const PWAStatusBanner = () => {
           </div>
         </div>
 
-        {/* Action Button */}
-        {deferredPrompt && !isInstalled && (
+        {/* Action Buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
-            onClick={handleInstallClick}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-all shadow-md shadow-indigo-600/30 shrink-0"
+            onClick={() => setShowTestingLab(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/30 cursor-pointer"
+            title="Buka PWA Testing Lab Simulator"
           >
-            <Download className="w-3.5 h-3.5" />
-            Install App
+            <FlaskConical className="w-3.5 h-3.5" />
+            <span>Test Lab</span>
           </button>
-        )}
 
-        <button
-          onClick={() => setShowBanner(false)}
-          className="text-slate-400 hover:text-slate-200 text-xs ml-1"
-          title="Tutup Indikator"
-        >
-          ✕
-        </button>
+          {deferredPrompt && !isInstalled && (
+            <button
+              onClick={handleInstallClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-all shadow-md shadow-indigo-600/30 shrink-0 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Install App
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowBanner(false)}
+            className="text-slate-400 hover:text-slate-200 text-xs ml-1 cursor-pointer"
+            title="Tutup Indikator"
+          >
+            ✕
+          </button>
+        </div>
       </div>
+
+      {/* Interactive PWA Testing Lab Modal */}
+      <PWATestingLab
+        isOpen={showTestingLab}
+        onClose={() => setShowTestingLab(false)}
+      />
     </div>
   );
 };
