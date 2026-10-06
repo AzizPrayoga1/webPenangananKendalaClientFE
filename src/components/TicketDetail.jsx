@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import axios from 'axios';
 import {
   ArrowLeft,
-  FileText,
   User,
   Clock,
   Calendar,
@@ -20,7 +19,6 @@ import {
   MessageSquare,
   RotateCcw,
   AlertTriangle,
-  Send,
   Phone,
   MapPin,
   Smartphone,
@@ -37,16 +35,10 @@ export const TicketDetail = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Security Redirect: If user is Client, redirect to public Client view
-  if (user?.role === 'client') {
-    return <Navigate to={`/client/tickets/${ticketId}`} replace />;
-  }
-
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState('');
-
 
   // PM States
   const [programmers, setProgrammers] = useState([]);
@@ -80,6 +72,14 @@ export const TicketDetail = () => {
   const [ownerDecisionNotes, setOwnerDecisionNotes] = useState('');
   const [isOwnerDecisionModalOpen, setIsOwnerDecisionModalOpen] = useState(false);
   const [ownerDecisionType, setOwnerDecisionType] = useState('approved'); // 'approved' | 'resolved' | 'returned_to_pm' | 'rejected'
+
+  // Action note states (For Programmer or Service Desk updates)
+  const [actionNote, setActionNote] = useState('');
+  const [newLogNotes, setNewLogNotes] = useState('');
+
+  // SD Self-Resolve / Close states
+  const [sdCloseNote, setSdCloseNote] = useState('');
+  const [showSdCloseForm, setShowSdCloseForm] = useState(false);
 
   const handlePmReviewSubmit = async (decision) => {
     setActionError('');
@@ -211,7 +211,7 @@ export const TicketDetail = () => {
     setTimeout(() => setCopiedId(''), 2000);
   };
 
-  const fetchTicket = async () => {
+  const fetchTicket = useCallback(async () => {
     try {
       const response = await axios.get(`/tickets/${ticketId}`);
       setTicket(response.data);
@@ -223,9 +223,9 @@ export const TicketDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ticketId]);
 
-  const fetchProgrammers = async () => {
+  const fetchProgrammers = useCallback(async () => {
     if (user?.role === 'project_manager') {
       try {
         const response = await axios.get('/programmers');
@@ -234,17 +234,19 @@ export const TicketDetail = () => {
         console.error('Failed to load developers list', err);
       }
     }
-  };
+  }, [user?.role]);
 
   useEffect(() => {
+    if (user?.role === 'client') return;
     fetchTicket();
-  }, [ticketId]);
+  }, [fetchTicket, user?.role]);
 
   useEffect(() => {
+    if (user?.role === 'client') return;
     if (ticket && user) {
       fetchProgrammers();
     }
-  }, [ticket, user]);
+  }, [ticket, user, fetchProgrammers]);
 
   const handleAssign = async (e) => {
     e.preventDefault();
@@ -301,8 +303,6 @@ export const TicketDetail = () => {
     }
   };
 
-  const [newLogNotes, setNewLogNotes] = useState('');
-
   const handleAddLogSubmit = async (isInternalTarget) => {
     setActionError('');
     setActionSuccess('');
@@ -353,13 +353,6 @@ export const TicketDetail = () => {
       setSubmitting(false);
     }
   };
-
-  // Action note states (For Programmer or Service Desk updates)
-  const [actionNote, setActionNote] = useState('');
-
-  // SD Self-Resolve / Close states
-  const [sdCloseNote, setSdCloseNote]       = useState('');
-  const [showSdCloseForm, setShowSdCloseForm] = useState(false);
 
   const handleSdSelfClose = async (e) => {
     e.preventDefault();
@@ -418,6 +411,11 @@ export const TicketDetail = () => {
       default: return 'bg-slate-50 text-slate-700 border border-slate-100';
     }
   };
+
+  // Security Redirect: If user is Client, redirect to public Client view
+  if (user?.role === 'client') {
+    return <Navigate to={`/client/tickets/${ticketId}`} replace />;
+  }
 
   if (loading) {
     return <SkeletonTicketDetail />;
