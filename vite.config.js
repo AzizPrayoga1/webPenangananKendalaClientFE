@@ -94,6 +94,7 @@ export default defineConfig({
     })
   ],
   server: {
+    port: 5174,
     allowedHosts: [
       'exes-slang-navigate.ngrok-free.dev'
     ]
